@@ -8,6 +8,10 @@
 
 # User-specific files
 .Ruserdata
+/Results
+/Data
+/Manuscript
+/Scripts/Delete_Mock.R
 
 # Example code in package build process
 *-Ex.R
