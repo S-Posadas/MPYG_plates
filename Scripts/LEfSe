@@ -1,0 +1,46 @@
+#!/usr/bin/bash
+
+# Select directory where Results/lefse is. The LEfSe input should be in the lefse folder. The LEfSe output will be stored in the same folder
+
+if [ -z ${FOLDER} ];
+then
+    read -p "Folder (e.g. MPYG_plates): " FOLDER
+else
+    echo "Running LEfSe on $FOLDER1"
+fi
+
+# Create subdirectory for LEfSe output
+
+DIR=${FOLDER}/Results/lefse/output
+mkdir -p $DIR
+
+# Select input from 
+
+INPUT=${FOLDER}/Results/lefse/physeq_re_lfse.txt
+echo "Running LEfSe on $INPUT"
+
+# lefse-format_input.py convert the input data matrix to the format for LEfSe.
+lefse_format_input.py $INPUT ${DIR}/lfse.in -c 2 -u 1 -s -1 -o 1000000 
+
+# lefse_run.py performs the actual statistica analysis
+lefse_run.py ${DIR}/lfse.in ${DIR}/lfse.res -r lda -e 1 --min_c 1 -y 0 -l 0.0 -a 0.1 # -w 0.05   
+
+# lefse_plot_res.py visualizes the output
+lefse_plot_res.py ${DIR}/lfse.res ${DIR}/lfse.plot.png --dpi 600 
+
+# lefse_plot_cladogram.py visualizes the output on a hierarchical tree
+lefse_plot_cladogram.py ${DIR}/lfse.res ${DIR}/lfse.cladogram.png --format png --dpi 600 \
+	--title " " \
+	--class_legend_vis 1 --class_legend_font_size 8 \
+	--label_font_size 6 \
+	--max_point_size 4 \
+	--clade_sep 0.5 \
+	--siblings_connector_width 1 --parents_connector_width 0.75 \
+	--labeled_start_lev 1 --labeled_stop_lev 7 \
+	--abrv_stop_lev 7   \
+	--right_space_prop 0.1 
+
+# Obtain the images for all the features that are detected as biomarkers
+mkdir -p ${DIR}/biomarkers_raw_images
+
+lefse_plot_features.py ${DIR}/lfse.in ${DIR}/lfse.res ${DIR}/biomarkers_raw_images/
