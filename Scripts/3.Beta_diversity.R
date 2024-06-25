@@ -78,6 +78,12 @@ NMDS.bray <- ggplot(data = as.data.frame(ordiplot$df_spiders), aes(x = x, y = y,
 
 NMDS.bray
 
+# Save in different formats
+
+ggsave("Results/5.Beta_plots/Figure_2.svg", dpi = 300)
+ggsave("Results/5.Beta_plots/Figure_2.png", dpi = 300)
+ggsave("Results/5.Beta_plots/Figure_2.tiff", dpi = 300)
+
 ## Weighted UniFrac ##
 
 ordiplot <- gg_ordiplot(ord.nmds.wUF, groups=sampdf$Plate, hull = TRUE, spiders = TRUE, 
