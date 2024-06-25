@@ -7,6 +7,7 @@ library(phyloseq)
 library(ggplot2)
 library(ggpubr)
 library(grid)
+library(gridExtra)
 library(openxlsx)
 
 #### End ####
@@ -65,34 +66,12 @@ write.xlsx(rich, "Results/2.Alpha_stats/richness.xlsx")
 
 #Shannon and Invsimpson are not normally distributed and paired -> paired Wilcoxon 
 #Observed and Chao1 are normally distributed and paired -> paired t test
-#However, we performed all tests in all indexes
-
-# Mann-Whitney-U-Test 
-
-mwut <- list()
-
-for (n in c("Observed", "Chao1", "Shannon", "InvSimpson")) {
-  U_test <- wilcox.test(rich[, n] ~ rich[, "Plate"], data = rich, paired = F, exact = T)
-  z <- abs(qnorm(U_test$p.value/2))
-  r <- z/sqrt(nrow(rich))
-  
-  tab <- c(U_test$method, paste("data:", n, "and Plate"), U_test$statistic, U_test$p.value, r)
-  mwut[[paste0(n)]] <- tab
-  
-}
-
-mwut <- as.data.frame(do.call(rbind, mwut))
-colnames(mwut) <- c("Test", "Variables", "Statistic", "p-value", "Effect size")
-
-mwut$p.adj <- p.adjust(mwut$`p-value`, method = "BH")
-
-write.xlsx(mwut, "Results/2.Alpha_stats/Mann_Whitney_u_test.xlsx", rowNames = T)
 
 # Wilcoxon-Test 
 
 wt <- list()
 
-for (n in c("Observed", "Chao1", "Shannon", "InvSimpson")) {
+for (n in c("Shannon", "InvSimpson")) {
   W_test <- wilcox.test(rich[, n] ~ rich[, "Plate"], data = rich, paired = T, exact = T)
   z <- abs(qnorm(W_test$p.value/2))
   r <- z/sqrt(nrow(rich))
@@ -106,44 +85,22 @@ wt <- as.data.frame(do.call(rbind, wt))
 colnames(wt) <- c("Test", "Variables", "Statistic", "p-value", "Effect size")
 
 wt$p.adj <- p.adjust(wt$`p-value`, method = "BH")
-wt$p.adj_notnorm <- c(NA, NA, p.adjust(wt$`p-value`[3:4], method = "BH"))
 
 write.xlsx(wt, "Results/2.Alpha_stats/Wilcoxon_test.xlsx", rowNames = T)
-
-# One-Way Anova
-
-#https://scienceparkstudygroup.github.io/microbiome-lesson/aio/index.html
-
-aov <- list()
-
-for(n in c("Observed", "Chao1", "Shannon", "InvSimpson")){
-  aov_test <- aov(rich[,n] ~ rich[, "Plate"], data = rich)
-  aov_sum <- summary(aov_test)
-  aov_test$df.residual
-  tab <- c(n, aov_sum[[1]]$`Sum Sq`, aov_sum[[1]]$`Mean Sq`, aov_sum[[1]]$`F value`, aov_sum[[1]]$`Pr(>F)`)
-  aov[[n]] <- tab
-}
-aov <- as.data.frame(do.call(rbind, aov)) ; aov <- aov[ , colSums(is.na(aov)) == 0]
-colnames(aov) <- c("Variable", "Sum Sq [i]", "Sum Sq Residuals", "Mean Sq [i]", "Mean Sq Residuals", "F value", "Pr(>F)")
-
-aov$p.adj <- p.adjust(aov$`Pr(>F)`, method = "BH")
-
-write.xlsx(aov, "Results/2.Alpha_stats/One_way_Anova.xlsx")
 
 # Paired t-test
 
 t <- list()
-for(n in c("Observed", "Chao1", "Shannon", "InvSimpson")){
+for(n in c("Observed", "Chao1")){
   t_test <- t.test(rich[rich$Plate == "HCB", n], rich[rich$Plate == "MPYG", n], paired = T)
   tab <- c(t_test$method, t_test$statistic, t_test$parameter, t_test$estimate, t_test$p.value)
   t[[n]] <- tab
 }
 
 t <- as.data.frame(do.call(rbind, t)) 
-colnames(t) <- c("Method", colnames(t)[2:4], "p-value")
+colnames(t) <- c("Test", "Statistic", "df", "mean difference", "p-value")
 
 t$p.adj <- p.adjust(t$`p-value`, method = "BH")
-t$p.adj_norm <- c(p.adjust(t$`p-value`[1:2], method = "BH"), NA, NA)
 
 write.xlsx(t, "Results/2.Alpha_stats/Paired_t_test.xlsx", rowNames = T)
 
@@ -151,7 +108,7 @@ write.xlsx(t, "Results/2.Alpha_stats/Paired_t_test.xlsx", rowNames = T)
 
 #### Alpha-diversity (Richness and diversity estimates) ####
 
-# Create plot with the right statistics
+# Customize plot for figure 1
 
 # Visualize alpha-diversity on unfiltered phyloseq object
 
@@ -182,11 +139,14 @@ P3 <- P3+
 
 
 # Combine all plots
-grid.arrange(nrow = 1,
+P4 <- grid.arrange(nrow = 1,
              P2 + ggtitle(NULL) + theme(legend.position = "none"),
              P3 + ggtitle(NULL) + theme(legend.position = "none") + ylab(NULL),
-             get_legend(P1), widths = c(4,4,1),
-             top = textGrob("Alpha Diversity",gp=gpar(fontsize=25)),
+             get_legend(P1.1), widths = c(4.1,4,1),
+           #  top = textGrob("Alpha Diversity",gp=gpar(fontsize=25)),
              bottom = textGrob("Plate",gp=gpar(fontsize=20)))
+
+ggsave(plot = P4,"Results/3.Alpha_plots/Figure_1.png", width = 11, height = 6.4, dpi = 300)
+ggsave(plot = P4,"Results/3.Alpha_plots/Figure_1.svg", width = 11, height = 6.4, dpi = 300)
 
 #### End ####
