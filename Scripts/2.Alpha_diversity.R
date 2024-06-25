@@ -104,6 +104,13 @@ t$p.adj <- p.adjust(t$`p-value`, method = "BH")
 
 write.xlsx(t, "Results/2.Alpha_stats/Paired_t_test.xlsx", rowNames = T)
 
+# Adjust p-values
+
+all <- rbind(wt[,c("Test", "Statistic", "p-value")], t[,c("Test", "Statistic", "p-value")])
+all$p.adj <- p.adjust(all$`p-value`, method = "BH")
+
+write.xlsx(t, "Results/2.Alpha_stats/Alpha_tests.xlsx", rowNames = T)
+
 #### End ####
 
 #### Alpha-diversity (Richness and diversity estimates) ####
