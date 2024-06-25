@@ -69,38 +69,20 @@ plot_bar(physeq_per, y =  "Abundance", title = "Abundance based on Genus", fill=
 #### Plot abundance from top ASVs ####
 # Top 20/50/100 ASVs
 
-top20 <- names(sort(taxa_sums(physeq), decreasing=TRUE))[1:20]  # adjust number to wished top ones
-top50 <- names(sort(taxa_sums(physeq), decreasing=TRUE))[1:50]
-top100 <- names(sort(taxa_sums(physeq), decreasing=TRUE))[1:100]
+top <- names(sort(taxa_sums(physeq), decreasing=TRUE))[1:20]  # adjust number to wished top ones
 
-ps.top20_per <- prune_taxa(top20, physeq_per)
-ps.top20 <- prune_taxa(top20, physeq)
-
-ps.top50_per <- prune_taxa(top50, physeq_per)
-ps.top50 <- prune_taxa(top50, physeq)
-
-ps.top100_per <- prune_taxa(top100, physeq_per)
-ps.top100 <- prune_taxa(top100, physeq)
+ps.top_per <- prune_taxa(top, physeq_per)
+ps.top <- prune_taxa(top, physeq)
 
 # Relative abundance
 
-plot_bar(ps.top100_per, y =  "Abundance", title = "Abundance based on top 100 ASV", fill="Species")+ facet_wrap(~Plate, scales="free_x") + 
+plot_bar(ps.top_per, y =  "Abundance", title = "Abundance based on top 20 ASV", fill="Species")+ facet_wrap(~Plate, scales="free_x") + 
   geom_bar(aes(color=Species, fill=Species), stat = "Identity", position = "stack")
-
-plot_bar(ps.top100_per, y =  "Abundance", title = "Abundance based on top 100 ASV", fill="Genus")+ facet_wrap(~Plate, scales="free_x") + 
-  geom_bar(aes(color=Genus, fill=Genus), stat = "Identity", position = "stack")
-
-plot_bar(ps.top100_per, y =  "Abundance", title = "Abundance based on top 100 ASV", fill="Phylum")+ facet_wrap(~Plate, scales="free_x") + 
-  geom_bar(aes(color=Phylum, fill=Phylum), stat = "Identity", position = "stack")
-
 
 # Absolute abundance
 
-plot_bar(ps.top100, y =  "Abundance", title = "Abundance based on top 100 ASV", fill="Genus")+ facet_wrap(~Plate, scales="free_x") +
+plot_bar(ps.top, y =  "Abundance", title = "Abundance based on top 20 ASV", fill="Genus")+ facet_wrap(~Plate, scales="free_x") +
   geom_bar(aes(color=Genus, fill=Genus), stat = "Identity", position = "stack")
-
-plot_bar(ps.top100, y =  "Abundance", title = "Abundance based on top 100 ASV", fill="Phylum")+ facet_wrap(~Plate, scales="free_x") + 
-  geom_bar(aes(color=Phylum, fill=Phylum), stat = "Identity", position = "stack")
 
 #### End ####
 
@@ -120,12 +102,15 @@ ps.Plate_plot = plot_bar(ps.Plate_per, y =  "Abundance", fill="Phylum") +
 
 # Bar plot paper 1
 BP1 <- ps.Plate_plot + geom_bar(aes(color=Phylum, fill=Phylum), stat = "Identity", position = "stack") +
-  ylab("Relative abundance") +
+  ylab("Relative abundance") + xlab(NULL) +
   theme(axis.text.x = element_blank(),
         axis.ticks.x = element_blank(),
+        axis.text.y = element_text(size = 26),
+        axis.title.y = element_text(size = 35),
+        legend.text = element_text(size = 26),
+        legend.title = element_text(size = 30),
         text = element_text(size = 20),
         legend.key.height = unit(0.06, "npc")) 
-
 
 # Plot top 20 ASVs per condition
 
@@ -143,13 +128,16 @@ ps.Plate_plot + geom_bar(aes(color=Species, fill=Species), stat = "Identity", po
 # Relative abundance
 
 # Bar plot paper 2
-BP2 <- plot_bar(ps.Plate_per, "Plate", fill="Plate", facet_grid=~Phylum) + geom_bar(stat = "Identity", position = "stack") +
+BP2 <- plot_bar(ps.Plate_per, "Plate", fill="Plate") +
+  geom_bar(stat = "identity", position = "stack") +
   ylab("Relative abundance") +
   theme(text = element_text(size=18),
-        axis.text = element_text(size = 22),
-        axis.title = element_text(size = 26),
-        legend.text = element_text(size = 22),
-        legend.title = element_text(size = 26)) 
+        axis.text.x = element_text(size = 22),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 35),
+        legend.text = element_text(size = 26),
+        legend.title = element_text(size = 30)) +
+  facet_wrap(~Phylum, nrow = 2)
 
 plot_bar(ps.Plate_per, "Phylum", fill="Phylum", facet_grid=~Plate) + geom_bar(stat = "Identity", position = "stack") +
   theme(text = element_text(size=18)) 
@@ -161,8 +149,8 @@ plot_bar(ps.top20_per, "Genus", fill="Genus", facet_grid=~Plate) + geom_bar(stat
 
 # Plot top 15 genera
 sum = tapply(taxa_sums(ps.Plate_per), tax_table(physeq_per)[, "Genus"], sum, na.rm=TRUE)
-top10 = names(sort(sum, TRUE))[1:15]
-topgenus = prune_taxa((tax_table(ps.Plate_per)[, "Genus"] %in% top10), ps.Plate_per)
+top = names(sort(sum, TRUE))[1:15]
+topgenus = prune_taxa((tax_table(ps.Plate_per)[, "Genus"] %in% top), ps.Plate_per)
 
 BP3 <- plot_bar(topgenus, "Genus", fill="Genus", facet_grid=~Plate) + geom_bar(stat = "Identity", position = "stack") +
   ylab("Relative abundance") +
@@ -475,17 +463,13 @@ BP4 <- plot_abundance(violin, Facet = "Species", Color = "Plate", n = 5)
 
 #### Bar plots paper ####
 
-library(cowplot)
-
 # Figure 3
 
-as_ggplot(grid.arrange(arrangeGrob(BP1 + theme(legend.position = "none",
-                                     axis.title.y = element_text(size = 25)),
-                         get_legend(BP1 + theme(text = element_text(size = 30))), nrow=1), 
-             arrangeGrob(BP2), 
-             nrow=2)) + draw_plot_label(label = c("A", "B"), size = 20,
-                                     x = c(0, 0), y = c(1, 0.5)) 
-
+as_ggplot(grid.arrange(grid.arrange(BP1 + theme(legend.position = "none"),
+                                   get_legend(BP1 + guides(fill = guide_legend(ncol = 2))),nrow=1), 
+                       BP2,
+                       nrow=2, heights = c(1.5,2.5))) + draw_plot_label(label = c("A", "B"), size = 30, x = c(0, 0), y = c(1, 0.6)) 
+                                       
 #Supplementary Figure 5
 
 
